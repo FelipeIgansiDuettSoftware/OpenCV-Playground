@@ -12,49 +12,47 @@ import com.squareup.picasso.Picasso
 import com.yariksoffice.javaopencvplaygroung.StitcherOutput.Failure
 import com.yariksoffice.javaopencvplaygroung.StitcherOutput.Success
 import com.yariksoffice.javaopencvplaygroung.databinding.ActivityMainBinding
-import io.reactivex.android.schedulers.AndroidSchedulers
-import io.reactivex.disposables.Disposable
-import io.reactivex.schedulers.Schedulers
-import io.reactivex.subjects.PublishSubject
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.isActive
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import org.bytedeco.opencv.opencv_stitching.Stitcher
 import java.io.File
 
 class MainActivity : AppCompatActivity() {
 
     private lateinit var imageStitcher: ImageStitcher
-    private lateinit var disposable: Disposable
+    private lateinit var processingDialog: ProgressDialog
+    private var stitchJob: Job? = null
+
+    private val activityScope = CoroutineScope(
+        SupervisorJob() + Dispatchers.Main.immediate
+    )
 
     lateinit var binding: ActivityMainBinding
-
-    private val stitcherInputRelay = PublishSubject.create<StitcherInput>()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
-        setUpViews()
+
+        binding.button.setOnClickListener { chooseImages() }
+
         setUpStitcher()
     }
 
-    private fun setUpViews() {
-        binding.button.setOnClickListener { chooseImages() }
-    }
-
-    @Suppress("DEPRECATION")
     private fun setUpStitcher() {
         imageStitcher = ImageStitcher(FileUtil(applicationContext))
-        val dialog = ProgressDialog(this).apply {
+        processingDialog = ProgressDialog(this).apply {
             setMessage(getString(R.string.processing_images))
             setCancelable(false)
         }
-
-        disposable = stitcherInputRelay.switchMapSingle {
-            imageStitcher.stitchImages(it)
-                    .subscribeOn(Schedulers.io())
-                    .observeOn(AndroidSchedulers.mainThread())
-                    .doOnSubscribe { dialog.show() }
-                    .doOnSuccess { dialog.dismiss() }
-        }.subscribe({ processResult(it) }, { processError(it) })
     }
 
     private fun chooseImages() {
@@ -79,9 +77,30 @@ class MainActivity : AppCompatActivity() {
 
     private fun processImages(uris: List<Uri>) {
         binding.image.setImageDrawable(null) // reset preview
-        val isScansChecked = binding.radioGroup.checkedRadioButtonId == R.id.radio_scan
-        val stitchMode = if (isScansChecked) Stitcher.SCANS else Stitcher.PANORAMA
-        stitcherInputRelay.onNext(StitcherInput(uris, stitchMode))
+        val radioGroup = binding.radioGroup
+        val isScansChecked = radioGroup.checkedRadioButtonId == R.id.radio_scan
+        val stitchMode = if (isScansChecked) Stitcher.SCANS
+            else Stitcher.PANORAMA
+
+        stitchJob?.cancel()
+        processingDialog.show()
+
+        stitchJob = activityScope.launch {
+            try {
+                val output = withContext(Dispatchers.IO) {
+                    imageStitcher.stitchImages(StitcherInput(uris, stitchMode))
+                }
+                processResult(output)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Throwable) {
+                processError(e)
+            } finally {
+                if (currentCoroutineContext().isActive) {
+                    processingDialog.dismiss()
+                }
+            }
+        }
     }
 
     private fun processError(e: Throwable) {
@@ -103,8 +122,12 @@ class MainActivity : AppCompatActivity() {
     }
 
     override fun onDestroy() {
+        stitchJob?.cancel()
+        activityScope.cancel()
+        if (::processingDialog.isInitialized && processingDialog.isShowing) {
+            processingDialog.dismiss()
+        }
         super.onDestroy()
-        disposable.dispose()
     }
 
     companion object {

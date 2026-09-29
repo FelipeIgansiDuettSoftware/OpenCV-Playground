@@ -6,7 +6,6 @@ import org.bytedeco.opencv.opencv_stitching.Stitcher
 
 import java.io.File
 
-import io.reactivex.Single
 import org.bytedeco.opencv.global.opencv_imgcodecs.imread
 import org.bytedeco.opencv.global.opencv_imgcodecs.imwrite
 import org.bytedeco.opencv.opencv_stitching.Stitcher.ERR_CAMERA_PARAMS_ADJUST_FAIL
@@ -25,12 +24,10 @@ sealed class StitcherOutput {
 
 class ImageStitcher(private val fileUtil: FileUtil) {
 
-    fun stitchImages(input: StitcherInput): Single<StitcherOutput> {
-        return Single.fromCallable {
-            val files = fileUtil.urisToFiles(input.uris)
-            val vector = filesToMatVector(files)
-            stitch(vector, input.stitchMode)
-        }
+    fun stitchImages(input: StitcherInput): StitcherOutput {
+        val files = fileUtil.urisToFiles(input.uris)
+        val vector = filesToMatVector(files)
+        return stitch(vector, input.stitchMode)
     }
 
     private fun stitch(vector: MatVector, stitchMode: Int): StitcherOutput {
