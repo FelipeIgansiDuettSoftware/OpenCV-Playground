@@ -35,6 +35,9 @@ android {
         }
     }
     namespace 'com.yariksoffice.javaopencvplaygroung'
+    buildFeatures {
+        viewBinding true
+    }
 }
 
 dependencies {

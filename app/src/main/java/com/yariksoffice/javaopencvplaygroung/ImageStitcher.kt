@@ -39,13 +39,17 @@ class ImageStitcher(private val fileUtil: FileUtil) {
         val status = stitcher.stitch(vector, result)
 
         fileUtil.cleanUpWorkingDirectory()
-        return if (status == Stitcher.OK) {
-            val resultFile = fileUtil.createResultFile()
-            imwrite(resultFile.absolutePath, result)
-            StitcherOutput.Success(resultFile)
-        } else {
-            val e = RuntimeException("Can't stitch images: " + getStatusDescription(status))
-            StitcherOutput.Failure(e)
+        return when (status) {
+            Stitcher.OK -> {
+                val resultFile = fileUtil.createResultFile()
+                imwrite(resultFile.absolutePath, result)
+                StitcherOutput.Success(resultFile)
+            }
+            else        -> {
+                val statusDescription = getStatusDescription(status)
+                val e = RuntimeException("Can't stitch images: $statusDescription")
+                StitcherOutput.Failure(e)
+            }
         }
     }
 

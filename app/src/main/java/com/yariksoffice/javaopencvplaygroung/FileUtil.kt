@@ -34,7 +34,10 @@ class FileUtil(private val context: Context) {
     @Throws(IOException::class)
     private fun createTempFile(root: File): File {
         root.mkdirs() // make sure that the directory exists
-        val date = SimpleDateFormat(DATE_FORMAT_TEMPLATE, Locale.getDefault()).format(Date())
+        val date = SimpleDateFormat(
+            DATE_FORMAT_TEMPLATE,
+            Locale.getDefault()).format(Date()
+        )
         val filePrefix = IMAGE_NAME_TEMPLATE.format(date)
         return File.createTempFile(filePrefix, JPG_EXTENSION, root)
     }

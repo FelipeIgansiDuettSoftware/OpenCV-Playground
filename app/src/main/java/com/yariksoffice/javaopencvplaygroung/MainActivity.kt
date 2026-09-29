@@ -5,15 +5,13 @@ import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
 import android.util.Log
-import android.view.View
-import android.widget.ImageView
-import android.widget.RadioGroup
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.squareup.picasso.MemoryPolicy
 import com.squareup.picasso.Picasso
 import com.yariksoffice.javaopencvplaygroung.StitcherOutput.Failure
 import com.yariksoffice.javaopencvplaygroung.StitcherOutput.Success
+import com.yariksoffice.javaopencvplaygroung.databinding.ActivityMainBinding
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.Disposable
 import io.reactivex.schedulers.Schedulers
@@ -23,25 +21,23 @@ import java.io.File
 
 class MainActivity : AppCompatActivity() {
 
-    private lateinit var imageView: ImageView
-    private lateinit var radioGroup: RadioGroup
-
     private lateinit var imageStitcher: ImageStitcher
     private lateinit var disposable: Disposable
+
+    lateinit var binding: ActivityMainBinding
 
     private val stitcherInputRelay = PublishSubject.create<StitcherInput>()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_main)
+        binding = ActivityMainBinding.inflate(layoutInflater)
+        setContentView(binding.root)
         setUpViews()
         setUpStitcher()
     }
 
     private fun setUpViews() {
-        imageView = findViewById(R.id.image)
-        radioGroup = findViewById(R.id.radio_group)
-        findViewById<View>(R.id.button).setOnClickListener { chooseImages() }
+        binding.button.setOnClickListener { chooseImages() }
     }
 
     @Suppress("DEPRECATION")
@@ -58,8 +54,7 @@ class MainActivity : AppCompatActivity() {
                     .observeOn(AndroidSchedulers.mainThread())
                     .doOnSubscribe { dialog.show() }
                     .doOnSuccess { dialog.dismiss() }
-        }
-                .subscribe({ processResult(it) }, { processError(it) })
+        }.subscribe({ processResult(it) }, { processError(it) })
     }
 
     private fun chooseImages() {
@@ -83,8 +78,8 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun processImages(uris: List<Uri>) {
-        imageView.setImageDrawable(null) // reset preview
-        val isScansChecked = radioGroup.checkedRadioButtonId == R.id.radio_scan
+        binding.image.setImageDrawable(null) // reset preview
+        val isScansChecked = binding.radioGroup.checkedRadioButtonId == R.id.radio_scan
         val stitchMode = if (isScansChecked) Stitcher.SCANS else Stitcher.PANORAMA
         stitcherInputRelay.onNext(StitcherInput(uris, stitchMode))
     }
@@ -104,7 +99,7 @@ class MainActivity : AppCompatActivity() {
     private fun showImage(file: File) {
         Picasso.get().load(file)
                 .memoryPolicy(MemoryPolicy.NO_STORE, MemoryPolicy.NO_CACHE)
-                .into(imageView)
+                .into(binding.image)
     }
 
     override fun onDestroy() {
