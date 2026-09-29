@@ -1,53 +1,79 @@
 package com.yariksoffice.javaopencvplaygroung
 
 import android.net.Uri
-
-import org.bytedeco.opencv.opencv_stitching.Stitcher
-
 import java.io.File
-
+import java.lang.Exception
 import org.bytedeco.opencv.global.opencv_imgcodecs.imread
 import org.bytedeco.opencv.global.opencv_imgcodecs.imwrite
+import org.bytedeco.opencv.opencv_core.Mat
+import org.bytedeco.opencv.opencv_core.MatVector
+import org.bytedeco.opencv.opencv_stitching.Stitcher
 import org.bytedeco.opencv.opencv_stitching.Stitcher.ERR_CAMERA_PARAMS_ADJUST_FAIL
 import org.bytedeco.opencv.opencv_stitching.Stitcher.ERR_HOMOGRAPHY_EST_FAIL
 import org.bytedeco.opencv.opencv_stitching.Stitcher.ERR_NEED_MORE_IMGS
-import org.bytedeco.opencv.opencv_core.Mat
-import org.bytedeco.opencv.opencv_core.MatVector
-import java.lang.Exception
 
-class StitcherInput(val uris: List<Uri>, val stitchMode: Int)
+/** Dados necessários para executar uma composição de imagens. */
+data class StitcherInput(
+    val uris: List<Uri>,
+    val stitchMode: Int
+)
 
+/** Resultado da composição: arquivo gerado ou falha conhecida do Stitcher. */
 sealed class StitcherOutput {
-    class Success(val file: File) : StitcherOutput()
-    class Failure(val e: Exception) : StitcherOutput()
+    data class Success(val file: File) : StitcherOutput()
+    data class Failure(val exception: Exception) : StitcherOutput()
 }
 
+/**
+ * Coordena a preparação das imagens e a execução do Stitcher do OpenCV.
+ *
+ * Esta classe não decide como a tela deve reagir ao resultado. Ela apenas
+ * transforma as entradas em um [StitcherOutput]. A Activity decide como
+ * exibir esse resultado.
+ */
 class ImageStitcher(private val fileUtil: FileUtil) {
 
+    /**
+     * Executa uma composição de imagens.
+     *
+     * O método é síncrono de propósito: quem chama decide em qual dispatcher
+     * o processamento deve ocorrer. A [MainActivity] o executa em
+     * [kotlinx.coroutines.Dispatchers.IO].
+     */
     fun stitchImages(input: StitcherInput): StitcherOutput {
-        val files = fileUtil.urisToFiles(input.uris)
-        val vector = filesToMatVector(files)
-        return stitch(vector, input.stitchMode)
+        val imageFiles = fileUtil.urisToFiles(input.uris)
+        val images = filesToMatVector(imageFiles)
+        return stitch(images, input.stitchMode)
     }
 
-    private fun stitch(vector: MatVector, stitchMode: Int): StitcherOutput {
+    /** Executa o Stitcher e grava o resultado quando a composição é concluída. */
+    private fun stitch(images: MatVector, stitchMode: Int): StitcherOutput {
         val result = Mat()
         val stitcher = Stitcher.create(stitchMode)
-        val status = stitcher.stitch(vector, result)
+        val status = stitcher.stitch(images, result)
 
         fileUtil.cleanUpWorkingDirectory()
-        return when (status) {
-            Stitcher.OK -> {
-                val resultFile = fileUtil.createResultFile()
-                imwrite(resultFile.absolutePath, result)
-                StitcherOutput.Success(resultFile)
-            }
-            else        -> {
-                val statusDescription = getStatusDescription(status)
-                val e = RuntimeException("Can't stitch images: $statusDescription")
-                StitcherOutput.Failure(e)
-            }
+
+        return if (status == Stitcher.OK) {
+            saveResult(result)
+        } else {
+            createFailure(status)
         }
+    }
+
+    /** Salva a imagem panorâmica e retorna o arquivo criado. */
+    private fun saveResult(result: Mat): StitcherOutput.Success {
+        val resultFile = fileUtil.createResultFile()
+        imwrite(resultFile.absolutePath, result)
+        return StitcherOutput.Success(resultFile)
+    }
+
+    /** Converte o código de status do OpenCV em um erro compreensível. */
+    private fun createFailure(status: Int): StitcherOutput.Failure {
+        val description = getStatusDescription(status)
+        return StitcherOutput.Failure(
+            RuntimeException("Can't stitch images: $description")
+        )
     }
 
     private fun getStatusDescription(status: Int): String {
@@ -59,11 +85,14 @@ class ImageStitcher(private val fileUtil: FileUtil) {
         }
     }
 
+    /** Lê os arquivos no formato de coleção esperado pelo OpenCV. */
     private fun filesToMatVector(files: List<File>): MatVector {
         val images = MatVector(files.size.toLong())
-        for (i in files.indices) {
-            images.put(i.toLong(), imread(files[i].absolutePath))
+
+        files.forEachIndexed { index, file ->
+            images.put(index.toLong(), imread(file.absolutePath))
         }
+
         return images
     }
 }
