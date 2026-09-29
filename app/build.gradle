@@ -27,6 +27,7 @@ android {
         targetCompatibility JavaVersion.VERSION_1_8
         incremental true
     }
+    namespace 'com.yariksoffice.javaopencvplaygroung'
 }
 
 dependencies {
