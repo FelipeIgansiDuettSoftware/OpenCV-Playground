@@ -2,11 +2,11 @@ apply plugin: 'com.android.application'
 apply plugin: 'kotlin-android'
 
 android {
-    compileSdk 37
+    compileSdkVersion 37
     defaultConfig {
         applicationId 'com.yariksoffice.javaopencvplaygroung'
-        minSdkVersion 16
-        targetSdk 34
+        minSdkVersion 23
+        targetSdkVersion 34
         versionCode 1
         versionName "1.0"
         multiDexEnabled true
@@ -27,22 +27,30 @@ android {
         targetCompatibility JavaVersion.VERSION_17
         incremental true
     }
+    packagingOptions {
+        resources {
+            excludes += [
+                'META-INF/native-image/**'
+            ]
+        }
+    }
     namespace 'com.yariksoffice.javaopencvplaygroung'
 }
 
 dependencies {
-    implementation 'androidx.appcompat:appcompat:1.0.2'
-    implementation 'com.squareup.picasso:picasso:2.5.2'
+    implementation 'androidx.appcompat:appcompat:1.8.0'
+    implementation 'com.squareup.picasso:picasso:2.71828'
     implementation "com.github.chrisbanes:PhotoView:2.3.0"
 
     implementation 'io.reactivex.rxjava2:rxandroid:2.1.1'
-    implementation 'io.reactivex.rxjava2:rxjava:2.2.11'
+    implementation 'io.reactivex.rxjava2:rxjava:2.2.21'
 
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlinVersion"
 
-    implementation 'org.bytedeco:javacv:1.4.4'
-    implementation 'org.bytedeco.javacpp-presets:opencv:4.0.1-1.4.4:android-arm64'
+    implementation 'org.bytedeco:javacv:1.5.14'
+    implementation 'org.bytedeco:opencv:4.14.0-1.5.14:android-arm64'
+    implementation 'org.bytedeco:opencv:4.14.0-1.5.14:android-x86_64'
     // u can drop redundant platforms here
-    implementation 'org.bytedeco.javacpp-presets:opencv:4.0.1-1.4.4:android-arm'
-    implementation 'org.bytedeco.javacpp-presets:opencv:4.0.1-1.4.4:android-x86'
+    implementation 'org.bytedeco:openblas:0.3.34-1.5.14:android-arm64'
+    implementation 'org.bytedeco:openblas:0.3.34-1.5.14:android-x86_64'
 }

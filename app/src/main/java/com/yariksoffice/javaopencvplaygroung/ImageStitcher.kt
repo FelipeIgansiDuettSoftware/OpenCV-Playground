@@ -2,19 +2,18 @@ package com.yariksoffice.javaopencvplaygroung
 
 import android.net.Uri
 
-import org.bytedeco.javacpp.opencv_core.Mat
-import org.bytedeco.javacpp.opencv_core.MatVector
-import org.bytedeco.javacpp.opencv_stitching.Stitcher
+import org.bytedeco.opencv.opencv_stitching.Stitcher
 
 import java.io.File
 
 import io.reactivex.Single
-import org.bytedeco.javacpp.opencv_imgcodecs.imread
-
-import org.bytedeco.javacpp.opencv_imgcodecs.imwrite
-import org.bytedeco.javacpp.opencv_stitching.Stitcher.ERR_CAMERA_PARAMS_ADJUST_FAIL
-import org.bytedeco.javacpp.opencv_stitching.Stitcher.ERR_HOMOGRAPHY_EST_FAIL
-import org.bytedeco.javacpp.opencv_stitching.Stitcher.ERR_NEED_MORE_IMGS
+import org.bytedeco.opencv.global.opencv_imgcodecs.imread
+import org.bytedeco.opencv.global.opencv_imgcodecs.imwrite
+import org.bytedeco.opencv.opencv_stitching.Stitcher.ERR_CAMERA_PARAMS_ADJUST_FAIL
+import org.bytedeco.opencv.opencv_stitching.Stitcher.ERR_HOMOGRAPHY_EST_FAIL
+import org.bytedeco.opencv.opencv_stitching.Stitcher.ERR_NEED_MORE_IMGS
+import org.bytedeco.opencv.opencv_core.Mat
+import org.bytedeco.opencv.opencv_core.MatVector
 import java.lang.Exception
 
 class StitcherInput(val uris: List<Uri>, val stitchMode: Int)
@@ -50,7 +49,6 @@ class ImageStitcher(private val fileUtil: FileUtil) {
         }
     }
 
-    @Suppress("SpellCheckingInspection")
     private fun getStatusDescription(status: Int): String {
         return when (status) {
             ERR_NEED_MORE_IMGS -> "ERR_NEED_MORE_IMGS"

@@ -1,6 +1,5 @@
 package com.yariksoffice.javaopencvplaygroung
 
-import android.app.Activity
 import android.app.ProgressDialog
 import android.content.Intent
 import android.net.Uri
@@ -10,19 +9,16 @@ import android.view.View
 import android.widget.ImageView
 import android.widget.RadioGroup
 import android.widget.Toast
-
+import androidx.appcompat.app.AppCompatActivity
 import com.squareup.picasso.MemoryPolicy
 import com.squareup.picasso.Picasso
-
-import org.bytedeco.javacpp.opencv_stitching.Stitcher
-
-import androidx.appcompat.app.AppCompatActivity
 import com.yariksoffice.javaopencvplaygroung.StitcherOutput.Failure
 import com.yariksoffice.javaopencvplaygroung.StitcherOutput.Success
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.Disposable
 import io.reactivex.schedulers.Schedulers
 import io.reactivex.subjects.PublishSubject
+import org.bytedeco.opencv.opencv_stitching.Stitcher
 import java.io.File
 
 class MainActivity : AppCompatActivity() {
@@ -75,7 +71,7 @@ class MainActivity : AppCompatActivity() {
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
-        if (requestCode == CHOOSE_IMAGES && resultCode == Activity.RESULT_OK && data != null) {
+        if (requestCode == CHOOSE_IMAGES && resultCode == RESULT_OK && data != null) {
             val clipData = data.clipData
             val images = if (clipData != null) {
                 List(clipData.itemCount) { clipData.getItemAt(it).uri }
@@ -106,7 +102,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun showImage(file: File) {
-        Picasso.with(this).load(file)
+        Picasso.get().load(file)
                 .memoryPolicy(MemoryPolicy.NO_STORE, MemoryPolicy.NO_CACHE)
                 .into(imageView)
     }
