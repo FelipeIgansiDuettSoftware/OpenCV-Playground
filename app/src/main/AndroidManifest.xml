@@ -15,7 +15,9 @@
         android:supportsRtl="true"
         android:theme="@style/AppTheme"
         tools:ignore="GoogleAppIndexingWarning">
-        <activity android:name="com.yariksoffice.javaopencvplaygroung.MainActivity">
+        <activity
+            android:exported="true"
+            android:name="com.yariksoffice.javaopencvplaygroung.MainActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
